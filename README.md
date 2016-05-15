@@ -85,8 +85,6 @@ While developing [Babel](https://github.com/babel/babel) I followed a
 This tool was abstracted out of that and deals with bootstrapping packages by linking them together as well as publishing them to npm. You can see the
 [Babel repo](https://github.com/babel/babel/tree/master/packages) for an example of a large Lerna project.
 
-> Lerna will log to a `lerna-debug.log` file (same as `npm-debug.log`) when lerna encounters an error running a command.
-
 ### Init
 
 ```sh
@@ -118,33 +116,20 @@ $ lerna bootstrap
 
 1. Link together all `packages` that depend on each other.
 2. `npm install` all other dependencies of each package.
-
-### Updated
-
-```sh
-$ lerna updated
-```
-
-1. Check which `packages` have changed since the last release, and log it.
-
-### Diff
-
-```sh
-$ lerna diff
-# diff a specific package
-$ lerna diff package-name
-```
-
-1. Diff all packages or a single package since the last release. Similar to `lerna updated`. This command basically runs `git diff`.
-
+3. 
 ### Publishing
 
 ```sh
 $ lerna publish
 ```
 
-1. Publish each module in `packages` that has been updated since the last version to npm with the tag `prerelease`.
-2. Once all packages have been published, remove the `prerelease` tags and add the tags `latest` and `stable`.
+1. Publish each module in `packages` that has been updated since the last version to npm with the tag `lerna-temp`.
+  1. Run the equivalent of `lerna updated` to determine which packages need to be published.
+  2. Increment the `version` key in `lerna.json` if necessary
+  3. Update the `package.json` of all updated packages to their new versions.
+  4. Update all dependencies of the updated packages with the new versions.
+  5. Create a new git commit and tag for the new version.
+2. Once all packages have been published, remove the `lerna-temp` tags and add the tags `latest`.
 
 #### --npm-tag [tagname]
 
@@ -165,6 +150,84 @@ $ lerna publish --canary
 The `canary` flag will publish packages after every successful merge using the sha as part of the tag.
 
 It will take the current `version` and append the sha as the new `version`. ex: `1.0.0-canary.81e3b443`.
+
+#### --skip-git
+
+```sh
+$ lerna publish --skip-git
+```
+
+Only publish to npm; skip commiting, tagging, and pushing git changes (this only affects publish).
+
+#### --force-publish
+
+```sh
+$ lerna publish --force-publish=package-2,package-4
+# force publish all packages
+$ lerna publish --force-publish=*
+```
+
+Force a publish for the specified packages (comma-seperated) or all packages using * (this skips the git diff check for changed packages)
+
+### Updated
+
+```sh
+$ lerna updated
+```
+
+1. Check which `packages` have changed since the last release, and log it.
+
+### Diff
+
+```sh
+$ lerna diff
+# diff a specific package
+$ lerna diff package-name
+```
+
+1. Diff all packages or a single package since the last release. Similar to `lerna updated`. This command basically runs `git diff`.
+
+### Ls
+
+```sh
+$ lerna ls
+```
+
+1. List all packages under the `packages` directory.
+
+### Run
+
+
+```sh
+$ lerna run my-script // runs npm run my-script in all packages
+```
+
+1. Runs the same [npm script](https://docs.npmjs.com/misc/scripts) in all packages.
+
+## Misc
+
+Lerna will log to a `lerna-debug.log` file (same as `npm-debug.log`) when lerna encounters an error running a command.
+
+Lerna also has support for [scoped packages](https://docs.npmjs.com/misc/scope).
+
+### lerna.json
+
+```js
+{
+  "lerna": "2.0.0-beta.9",
+  "version": "1.1.3",
+  "publishConfig": {
+    "ignore": [
+      "ignored-file",
+      "*.md"
+    ]
+  }
+}
+```
+
+- `lerna`: the current version of `lerna` being used.
+- `version`: the current version of the repository.
+- `publishConfig.ignore`: an array of globs that won't be included in `lerna updated/publish`. Use this to prevent publishing a new version just because of `README.md` typo.
 
 ## How it works
 
