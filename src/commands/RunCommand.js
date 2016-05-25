@@ -1,8 +1,8 @@
 import NpmUtilities from "../NpmUtilities";
-import Command from "../Command";
+import ScopedCommand from "../ScopedCommand";
 import async from "async";
 
-export default class RunCommand extends Command {
+export default class RunCommand extends ScopedCommand {
   initialize(callback) {
     this.script = this.input[0];
     this.args = this.input.slice(1);
